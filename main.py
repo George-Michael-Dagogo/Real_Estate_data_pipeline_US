@@ -19,4 +19,3 @@ for j in table.find_all('tr')[1:]:
     length = len(league_table)
     league_table.loc[length] = row
 
-print(league_table)
