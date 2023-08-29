@@ -1,21 +1,42 @@
-import requests
-from bs4 import BeautifulSoup
-import pandas as pd
-import numpy as np
+import json
+import psycopg2
 
-url = 'https://www.worldfootball.net/all_matches/eng-premier-league-2023-2024/'
-headers = []
-page = requests.get(url)
-soup = BeautifulSoup(page.text,  "html.parser")
-table= soup.find("table", class_="standard_tabelle")
+# PostgreSQL database connection parameters
+connection_params = {
+    "host": "testtech.postgres.database.azure.com",
+    "port": "5432",
+    "database": "postgres",
+    "user": "testtech",
+    "password": "George9042"
+}
 
-for i in table.find_all('th'):
-    title = i.text
-    headers.append(title)
-league_table = pd.DataFrame(columns = headers)
-for j in table.find_all('tr')[1:]:
-    row_data = j.find_all('td')
-    row = [i.text for i in row_data]
-    length = len(league_table)
-    league_table.loc[length] = row
+# Read JSON file
+with open("dwsample2-json.json", "r") as file:
+    json_data = json.load(file)
+json_string = json.dumps(json_data)
+# Connect to PostgreSQL
+connection = psycopg2.connect(**connection_params)
+cursor = connection.cursor()
 
+create_query = '''CREATE TABLE IF NOT EXISTS json_data (
+    id SERIAL PRIMARY KEY,
+    data JSONB
+);'''
+cursor.execute(create_query)
+# Insert JSON data into the table
+insert_query = "INSERT INTO json_data (data) VALUES (%s);"
+cursor.execute(insert_query, (json_string,))
+
+select_query = "SELECT * FROM json_data;"
+cursor.execute(select_query)
+
+# Fetch all rows
+rows = cursor.fetchall()
+
+# Print the fetched data
+for row in rows:
+    print(row)
+# Commit and close connection
+connection.commit()
+cursor.close()
+connection.close()
